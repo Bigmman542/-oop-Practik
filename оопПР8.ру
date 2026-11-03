@@ -1,0 +1,336 @@
+import tkinter as tk
+from tkinter import messagebox
+
+FONT_TITLE = ("Times New Roman", 16, "bold")
+FONT_TEXT = ("Times New Roman", 12)
+FONT_BTN = ("Times New Roman", 11, "bold")
+BG_FORM = "#e8f5e9"
+
+
+class ToolTip:
+
+    def __init__(self, widget, text):
+        self.widget, self.text, self.tip = widget, text, None
+        widget.bind("<Enter>", self._show)
+        widget.bind("<Leave>", self._hide)
+
+    def _show(self, _event=None):
+        x = self.widget.winfo_rootx() + 20
+        y = self.widget.winfo_rooty() + self.widget.winfo_height() + 4
+        self.tip = tk.Toplevel(self.widget)
+        self.tip.wm_overrideredirect(True)
+        self.tip.wm_geometry(f"+{x}+{y}")
+        tk.Label(self.tip, text=self.text, bg="#ffffe0", relief="solid",
+                 borderwidth=1, font=("Arial", 9)).pack()
+
+    def _hide(self, _event=None):
+        if self.tip:
+            self.tip.destroy()
+            self.tip = None
+
+
+def to_float(text):
+    return float(text.strip().replace(",", "."))
+
+
+def fmt(value):
+    return f"{value:.2f}".rstrip("0").rstrip(".")
+
+
+class PhotoCanvas(tk.Canvas):
+    W, H = 200, 240
+
+    def __init__(self, master, painter):
+        super().__init__(master, width=self.W, height=self.H,
+                         highlightthickness=2, highlightbackground="#6a1b9a")
+        painter(self)
+
+    def show(self, x, y):
+        self.place(x=x, y=y)
+
+    def hide(self):
+        self.place_forget()
+
+
+def paint_portrait(c):
+    c.create_rectangle(0, 0, 200, 240, fill="#bbdefb", outline="")
+    c.create_oval(55, 40, 145, 150, fill="#ffcc80", outline="black")
+    c.create_arc(50, 30, 150, 120, start=0, extent=180, fill="#4e342e")
+    c.create_oval(78, 85, 92, 99, fill="white")
+    c.create_oval(108, 85, 122, 99, fill="white")
+    c.create_oval(82, 89, 90, 97, fill="black")
+    c.create_oval(112, 89, 120, 97, fill="black")
+    c.create_arc(78, 100, 122, 140, start=200, extent=140, style="arc", width=3)
+    c.create_rectangle(60, 150, 140, 240, fill="#1a237e", outline="")
+    c.create_text(100, 225, text="Портрет", fill="white", font=("Arial", 9))
+    c.create_rectangle(70, 8, 130, 38, fill="black")
+    c.create_rectangle(55, 36, 145, 44, fill="black")
+
+
+def paint_art(c):
+    c.create_rectangle(0, 0, 200, 240, fill="#ff8f00", outline="")
+    for i, col in enumerate(("#ff6f00", "#e65100", "#bf360c", "#4a148c")):
+        c.create_rectangle(0, 80 + i * 30, 200, 110 + i * 30, fill=col, outline="")
+    c.create_oval(120, 20, 180, 80, fill="#fff176", outline="")
+    c.create_rectangle(35, 150, 165, 185, fill="#c62828", outline="black")
+    c.create_polygon(65, 150, 80, 125, 130, 125, 145, 150, fill="#ef5350", outline="black")
+    c.create_oval(48, 175, 80, 207, fill="black")
+    c.create_oval(120, 175, 152, 207, fill="black")
+    c.create_text(100, 228, text="Фішка «Автомобіль»", fill="white", font=("Arial", 9))
+
+
+def paint_third(c):
+    c.create_rectangle(0, 0, 200, 240, fill="#81d4fa", outline="")
+    c.create_rectangle(0, 190, 200, 240, fill="#66bb6a", outline="")
+    c.create_rectangle(40, 100, 160, 190, fill="#ffe0b2", outline="black")
+    c.create_polygon(30, 100, 100, 40, 170, 100, fill="#c62828", outline="black")
+    c.create_rectangle(88, 140, 112, 190, fill="#5d4037")
+    c.create_rectangle(55, 120, 80, 145, fill="#bbdefb", outline="black")
+    c.create_rectangle(120, 120, 145, 145, fill="#bbdefb", outline="black")
+    c.create_text(100, 215, text="Мій будинок (гра)", fill="white", font=("Arial", 9))
+
+
+class PlayerProfileForm(tk.Toplevel):
+    PHOTOS = ["Портретна фотографія", "Художня фотографія", "Третя фотографія"]
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.title("Анкета гравця")
+        self.geometry("560x400+150+120")
+        self.resizable(False, False)
+        self.configure(bg=BG_FORM)
+
+        self.next_idx = 0
+        self.current_idx = None
+
+        tk.Label(self, text="Анкета гравця «Монополії»", font=FONT_TITLE,
+                 fg="purple", bg=BG_FORM).place(x=20, y=10)
+        data = [
+            "Ім'я гравця: Іван Петренко",
+            "Група: ІС-21",
+            "Фішка: Автомобіль",
+            "Стартовий капітал: 1500 M$",
+            "Улюблене поле: Вулиця Хрещатик",
+        ]
+        for i, line in enumerate(data):
+            tk.Label(self, text=line, font=FONT_TEXT, bg=BG_FORM,
+                     anchor="w").place(x=20, y=60 + i * 30, width=300)
+        tk.Label(self, text="Стратегія: скуповувати транспортні "
+                            "компанії та будувати готелі на «помаранчевих» вулицях.",
+                 font=FONT_TEXT, bg=BG_FORM, wraplength=290, justify="left",
+                 anchor="nw").place(x=20, y=215, width=300, height=70)
+
+        self.images = [PhotoCanvas(self, paint_portrait),
+                       PhotoCanvas(self, paint_art),
+                       PhotoCanvas(self, paint_third)]
+        self.img_x, self.img_y = 340, 55
+
+        self.lbl_name = tk.Label(self, text="", font=("Times New Roman", 11, "italic"),
+                                 bg=BG_FORM, fg="#4a148c")
+        self.lbl_name.place(x=320, y=300, width=240)
+
+        self.btn_next = tk.Button(self, text=self.PHOTOS[0], font=FONT_BTN,
+                                  command=self.on_next)
+        self.btn_next.place(x=20, y=320, width=200, height=32)
+        self.btn_hide = tk.Button(self, text="Забрати фотографію", font=FONT_BTN,
+                                  command=self.on_hide, state=tk.DISABLED)
+        self.btn_hide.place(x=240, y=320, width=170, height=32)
+        self.btn_hide.place_forget()
+
+    def on_next(self):
+        for img in self.images:
+            img.hide()
+        idx = self.next_idx
+        self.images[idx].show(self.img_x, self.img_y)
+        self.current_idx = idx
+        self.lbl_name.config(text="Зараз: " + self.PHOTOS[idx])
+
+        self.next_idx = (idx + 1) % len(self.PHOTOS)
+        self.btn_next.config(text=self.PHOTOS[self.next_idx])
+
+        self.btn_hide.place(x=240, y=320, width=170, height=32)
+        self.btn_hide.config(state=tk.NORMAL)
+
+    def on_hide(self):
+        for img in self.images:
+            img.hide()
+        self.current_idx = None
+        self.lbl_name.config(text="")
+        self.btn_hide.config(state=tk.DISABLED)
+        self.btn_hide.place_forget()
+        self.btn_next.config(text=self.PHOTOS[self.next_idx])
+
+
+class CurrencyExchangeForm(tk.Toplevel):
+    ARROW_SELL = "⇒"
+    ARROW_BUY = "⇐"
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.title("Обмін валюти — Банк «Монополії»")
+        self.geometry("470x290+200+160")
+        self.resizable(False, False)
+        self.configure(bg="#fff8e1")
+        bg = "#fff8e1"
+
+        self.mode = tk.IntVar(value=2)
+        self.rb_buy = tk.Radiobutton(self, text="Купівля M$", variable=self.mode,
+                                     value=1, font=FONT_TEXT, bg=bg,
+                                     command=self.rb_buy_click)
+        self.rb_sell = tk.Radiobutton(self, text="Продаж M$", variable=self.mode,
+                                      value=2, font=FONT_TEXT, bg=bg,
+                                      command=self.rb_sell_click)
+        self.rb_buy.place(x=20, y=15, width=190, height=28)
+        self.rb_sell.place(x=260, y=15, width=190, height=28)
+
+        tk.Label(self, text="Курс купівлі, грн за 1 M$:", font=FONT_TEXT, bg=bg,
+                 anchor="w").place(x=20, y=60, width=190, height=28)
+        tk.Label(self, text="Курс продажу, грн за 1 M$:", font=FONT_TEXT, bg=bg,
+                 anchor="w").place(x=20, y=100, width=190, height=28)
+        self.ed_buy = tk.Entry(self, font=FONT_TEXT, justify="right")
+        self.ed_sell = tk.Entry(self, font=FONT_TEXT, justify="right")
+        self.ed_buy.insert(0, "5")
+        self.ed_sell.insert(0, "5.2")
+        self.ed_buy.place(x=260, y=60, width=190, height=28)
+        self.ed_sell.place(x=260, y=100, width=190, height=28)
+
+        self.ed_sum = tk.Entry(self, font=FONT_TEXT, justify="right")
+        self.ed_sum.insert(0, "20")
+        self.ed_sum.place(x=20, y=150, width=190, height=32)
+        self.lbl_arrow = tk.Label(self, text=self.ARROW_SELL, font=("Arial", 22, "bold"),
+                                  fg="#2e7d32", bg=bg, cursor="hand2")
+        self.lbl_arrow.place(x=215, y=146, width=40, height=40)
+        self.lbl_arrow.bind("<Button-1>", self.arrow_click)
+        self.result = tk.StringVar()
+        self.ed_res = tk.Entry(self, font=FONT_TEXT, justify="right",
+                               textvariable=self.result, state="readonly")
+        self.ed_res.place(x=260, y=150, width=190, height=32)
+
+        tk.Label(self, text="Сума, M$", font=("Times New Roman", 10, "italic"),
+                 bg=bg).place(x=20, y=184, width=190)
+        tk.Label(self, text="Результат, грн", font=("Times New Roman", 10, "italic"),
+                 bg=bg).place(x=260, y=184, width=190)
+
+        tk.Button(self, text="Обчислити", font=FONT_BTN,
+                  command=self.calculate).place(x=20, y=225, width=130, height=34)
+        tk.Button(self, text="Очистити", font=FONT_BTN,
+                  command=self.clear).place(x=170, y=225, width=130, height=34)
+        tk.Button(self, text="Вихід", font=FONT_BTN,
+                  command=self.destroy).place(x=320, y=225, width=130, height=34)
+
+        ToolTip(self.ed_sum, "Введіть суму в M$")
+        ToolTip(self.ed_buy, "Введіть курс купівлі")
+        ToolTip(self.ed_sell, "Введіть курс продажу")
+
+        self.ed_sum.focus_set()
+
+    def rb_sell_click(self):
+        self.lbl_arrow.config(text=self.ARROW_SELL)
+        self.ed_sum.focus_set()
+
+    def rb_buy_click(self):
+        self.lbl_arrow.config(text=self.ARROW_BUY)
+        self.ed_sum.focus_set()
+
+    def arrow_click(self, _event=None):
+        if self.mode.get() == 1:
+            self.mode.set(2)
+            self.rb_sell_click()
+        else:
+            self.mode.set(1)
+            self.rb_buy_click()
+
+    def calculate(self):
+        try:
+            f1 = to_float(self.ed_buy.get())
+            f2 = to_float(self.ed_sell.get())
+            f3 = to_float(self.ed_sum.get())
+        except ValueError:
+            messagebox.showerror("Помилка", "Введіть коректні числа "
+                                            "(допускається крапка або кома).", parent=self)
+            return
+        f4 = f1 * f3 if self.mode.get() == 1 else f2 * f3
+        self.result.set(fmt(f4))
+
+    def clear(self):
+        self.ed_sum.delete(0, tk.END)
+        self.result.set("")
+        self.ed_sum.focus_set()
+
+
+class DistanceForm(tk.Toplevel):
+    KM_PER_MILE = 1.609344
+    KM_PER_NAUTICAL = 1.852
+
+    def __init__(self, master):
+        super().__init__(master)
+        self.title("Відстань між залізницями")
+        self.geometry("400x330+250+200")
+        self.resizable(False, False)
+        bg = "#e3f2fd"
+        self.configure(bg=bg)
+
+        self.mode = tk.IntVar(value=1)
+        tk.Radiobutton(self, text="милі → км", variable=self.mode, value=1,
+                       font=FONT_TEXT, bg=bg).place(x=20, y=15, width=170)
+        tk.Radiobutton(self, text="км → милі", variable=self.mode, value=2,
+                       font=FONT_TEXT, bg=bg).place(x=210, y=15, width=170)
+
+        self.group = tk.LabelFrame(self, text=" Тип милі ", font=FONT_TEXT, bg=bg)
+        self.group.place(x=20, y=55, width=360, height=75)
+        self.item_index = tk.IntVar(value=0)
+        for i, name in enumerate(("Звичайна (1,609344 км)", "Морська (1,852 км)")):
+            tk.Radiobutton(self.group, text=name, variable=self.item_index, value=i,
+                           font=FONT_TEXT, bg=bg, anchor="w").pack(fill="x", padx=8)
+
+        tk.Label(self, text="Значення:", font=FONT_TEXT, bg=bg,
+                 anchor="w").place(x=20, y=150, width=100, height=28)
+        self.ed_in = tk.Entry(self, font=FONT_TEXT, justify="right")
+        self.ed_in.insert(0, "10")
+        self.ed_in.place(x=200, y=150, width=180, height=28)
+        tk.Label(self, text="Результат:", font=FONT_TEXT, bg=bg,
+                 anchor="w").place(x=20, y=195, width=100, height=28)
+        self.out = tk.StringVar()
+        tk.Entry(self, font=FONT_TEXT, justify="right", textvariable=self.out,
+                 state="readonly").place(x=200, y=195, width=180, height=28)
+
+        tk.Button(self, text="Обчислити", font=FONT_BTN,
+                  command=self.calculate).place(x=20, y=260, width=170, height=34)
+        tk.Button(self, text="Вихід", font=FONT_BTN,
+                  command=self.destroy).place(x=210, y=260, width=170, height=34)
+
+    def calculate(self):
+        try:
+            value = to_float(self.ed_in.get())
+        except ValueError:
+            messagebox.showerror("Помилка", "Введіть коректне число.", parent=self)
+            return
+        k = self.KM_PER_MILE if self.item_index.get() == 0 else self.KM_PER_NAUTICAL
+        self.out.set(fmt(value * k if self.mode.get() == 1 else value / k))
+
+
+class MainForm(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Монополія — інформаційна система (ЛР №8)")
+        self.geometry("460x330+100+80")
+        self.resizable(False, False)
+        self.configure(bg=BG_FORM)
+
+        tk.Label(self, text="МОНОПОЛІЯ", font=("Times New Roman", 26, "bold"),
+                 fg="#b71c1c", bg=BG_FORM).pack(pady=(18, 0))
+        tk.Label(self, text="Лабораторна робота №8: віконний інтерфейс",
+                 font=("Times New Roman", 12, "italic"), bg=BG_FORM).pack(pady=(0, 18))
+
+        items = [("Анкета гравця", PlayerProfileForm),
+                 ("Банк: обмін валюти (грн ↔ M$)", CurrencyExchangeForm),
+                 ("Відстань між залізницями (милі ↔ км)", DistanceForm)]
+        for text, form_cls in items:
+            tk.Button(self, text=text, font=FONT_BTN, width=36,
+                      command=lambda c=form_cls: c(self)).pack(pady=5, ipady=4)
+        tk.Button(self, text="Вихід", font=FONT_BTN, width=36,
+                  command=self.destroy).pack(pady=(15, 0), ipady=4)
+
+
+if __name__ == "__main__":
+    MainForm().mainloop()
