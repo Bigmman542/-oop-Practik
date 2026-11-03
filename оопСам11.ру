@@ -1,0 +1,61 @@
+Варіант 1. Відмінність за типом аргументу 
+
+from functools import singledispatch
+
+
+@singledispatch
+def describe(x):
+    print(f"Невідомий тип {type(x).__name__}: {x}")
+
+
+@describe.register(int)
+def _(x):
+    print(f"int: {x}, квадрат = {x * x}")
+
+
+@describe.register(float)
+def _(x):
+    print(f"float: {x}, половина = {x / 2}")
+
+
+@describe.register(str)
+def _(s):
+    print(f'str: "{s}", довжина = {len(s)}')
+
+
+@describe.register(list)
+def _(lst):
+    print(f"list: {lst}, елементів = {len(lst)}")
+
+
+describe(7)
+describe(3.14)
+describe("Привіт")
+describe([1, 2, 3])
+describe(2 + 3j)
+
+
+Варіант 2. Відмінність за кількістю аргументів 
+
+import math
+
+
+def area(*args):
+    if len(args) == 1:
+        r, = args
+        return math.pi * r ** 2
+    elif len(args) == 2:
+        a, b = args
+        return a * b
+    elif len(args) == 3:
+        a, b, c = args
+        p = (a + b + c) / 2
+        return math.sqrt(p * (p - a) * (p - b) * (p - c))
+    else:
+        raise TypeError("area() приймає від 1 до 3 аргументів")
+
+
+print("Круг (r = 5):        ", round(area(5), 4))
+print("Прямокутник (4 x 6): ", area(4, 6))
+print("Трикутник (3, 4, 5): ", area(3, 4, 5))
+
